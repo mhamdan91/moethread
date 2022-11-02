@@ -47,7 +47,7 @@ The input data is a dictionary collection of whatever needs to run in parallel.
 For example if you have a dataset of images and you would like to read those images in parallel and those images have labels, then you have to create a dictionary of image paths and their corrosponding labels. You have to make sure that the two lists are aligned.
 
 ```python
-image_paths  = ["image_0.jpg", "image_1.jpg", ...] 	# some paths
+image_paths  = ["image_0.jpg", "image_1.jpg", ...] 	# some dummy paths
 image_labels = [0, 1, ...] 		                # some dummy labels
 assert len(image_paths) == len(image_labels)
 
