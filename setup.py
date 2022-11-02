@@ -1,0 +1,30 @@
+from setuptools import setup, find_packages
+import os
+
+VERSION = '1.0.0'
+DESCRIPTION = 'Wrapped convient multithreading'
+LONG_DESCRIPTION = 'Python wrapper for ThreadPoolExecutor to easily multithread resource bound tasks'
+
+# Setting up
+setup(
+    name="moethread",
+    version=VERSION,
+    author="mhamdan91 (Hamdan, Muhammad)",
+    author_email="<mhamdan-91@hotmail.com>",
+    description=DESCRIPTION,
+    long_description_content_type="text/markdown",
+    long_description=LONG_DESCRIPTION,
+    packages=find_packages(),
+    install_requires=[],
+    keywords=['python', 'multithreading', 'wrappers', 'decorator', 'pool', 'multitasking',
+              'easy multithreading', 'thread', 'parallel', 'concurrent'],
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3",
+        "Operating System :: Unix",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "License :: OSI Approved :: MIT License",
+    ]
+)
