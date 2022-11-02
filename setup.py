@@ -1,10 +1,9 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '1.0.0'
-DESCRIPTION = 'Wrapped convient multithreading'
-LONG_DESCRIPTION = 'Python wrapper for ThreadPoolExecutor to easily multithread resource bound tasks'
-
+VERSION = '1.0.5'
+DESCRIPTION = 'Python wrapper for ThreadPoolExecutor to easily multithread resource bound tasks'
+LONG_DESCRIPTION = open('README.md').read()
 # Setting up
 setup(
     name="moethread",
