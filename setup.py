@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '1.0.5'
+VERSION = '1.0.6'
 DESCRIPTION = 'Python wrapper for ThreadPoolExecutor to easily multithread resource bound tasks'
 LONG_DESCRIPTION = open('README.md').read()
 # Setting up
