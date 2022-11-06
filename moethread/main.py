@@ -30,9 +30,10 @@ def parallel_call(func):
         _data = kwargs.get('data')
         total = len(list(_data.values())[0])
         thread_limit = kwargs.get('thread_limit', 0)
-        dynamic_threads = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
-        thread = dynamic_threads if kwargs.get('threads') < 1 else kwargs.get('threads')
+        thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
+        thread = thread_count if kwargs.get('threads') < 1 else kwargs.get('threads')
         threads = min(4096, thread) if thread_limit == 0 else thread
+        print('********************* MultiThreading Start *********************')
         print(f"[  INFO  ] Launching: {threads} threads...")
         # Check if all values have the same length, and raise exception if not...
         for key in _data:
@@ -44,4 +45,5 @@ def parallel_call(func):
             for i in range(total):
                 data = {key: _data[key][i] for key in _data}
                 exe.submit(processor, *args, data=data, total=total)
+        print('\n********************* MultiThreading End *********************')
     return wrapper
