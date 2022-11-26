@@ -11,7 +11,7 @@ example: moethread
 inside __init__.py add imports as relative imports
 
 # Upload to pypi.org
-twince upload dist/*
+twine upload dist/*
 # enter username and password
 
 # Note, everytime you upload, you have to make sure you assign a new version

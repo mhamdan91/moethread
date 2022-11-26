@@ -29,6 +29,9 @@ def parallel_call(func):
         count = 0
         _data = kwargs.get('data')
         total = len(list(_data.values())[0])
+        if not total:
+            print("Recieved empty list. Early termination...")
+            return
         thread_limit = kwargs.get('thread_limit', 0)
         thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
         thread = thread_count if kwargs.get('threads') < 1 else kwargs.get('threads')
