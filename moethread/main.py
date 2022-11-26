@@ -29,14 +29,15 @@ def parallel_call(func):
         count = 0
         _data = kwargs.get('data')
         total = len(list(_data.values())[0])
+        print('********************* MultiThreading Start *********************')
         if not total:
-            print("[  WARNING  ] Recieved empty list. Early termination...")
+            print("[  WARN  ] Recieved empty list. Early termination...")
+            print('********************* MultiThreading End *********************')
             return
         thread_limit = kwargs.get('thread_limit', 0)
         thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
         thread = thread_count if kwargs.get('threads') < 1 else kwargs.get('threads')
         threads = min(4096, thread) if thread_limit == 0 else thread
-        print('********************* MultiThreading Start *********************')
         print(f"[  INFO  ] Launching: {threads} threads...")
         # Check if all values have the same length, and raise exception if not...
         for key in _data:
