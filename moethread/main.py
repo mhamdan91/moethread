@@ -47,7 +47,7 @@ def parallel_call(func):
         with ThreadPoolExecutor(threads) as exe:
             # Iterate over data...
             for i in range(total):
-                data = {key: _data[key][i] for key in _data}
+                data = {key: list(_data[key])[i] for key in _data}
                 exe.submit(processor, *args, data=data, total=total)
         print('\n********************* MultiThreading End *********************')
     return wrapper
