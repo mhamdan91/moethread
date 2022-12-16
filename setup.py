@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 DESCRIPTION = 'Python wrapper for ThreadPoolExecutor to easily multithread resource bound tasks'
 LONG_DESCRIPTION = open('README.md').read()
 # Setting up
@@ -10,6 +10,7 @@ setup(
     version=VERSION,
     author="mhamdan91 (Hamdan, Muhammad)",
     author_email="<mhamdan-91@hotmail.com>",
+    url='https://github.com/mhamdan91/moethread',
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=LONG_DESCRIPTION,
