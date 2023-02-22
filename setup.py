@@ -9,7 +9,7 @@ setup(
     name="moethread",
     version=VERSION,
     author="mhamdan91 (Hamdan, Muhammad)",
-    author_email="<mhamdan-91@hotmail.com>",
+    author_email="<mhamdan.dev@gmail.com>",
     url='https://github.com/mhamdan91/moethread',
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
