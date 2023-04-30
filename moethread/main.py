@@ -57,9 +57,10 @@ def parallel_call(func):
             print("[  WARN  ] Recieved empty list. Early termination...")
             print('********************* MultiThreading End *********************')
             return
+        _threads = kwargs.get('threads', -1) or kwargs.get('thread', -1)
         thread_limit = kwargs.get('thread_limit', 0)
         thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
-        thread = thread_count if kwargs.get('threads') < 1 else kwargs.get('threads')
+        thread = thread_count if _threads < 1 else _threads
         threads = min(4096, thread) if thread_limit == 0 else thread
         print(f"[  INFO  ] Launching: {threads} threads...")
         # Check if all values have the same length, and raise exception if not...
