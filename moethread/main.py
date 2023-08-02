@@ -24,13 +24,34 @@
 import time
 import sys
 import math
+from moecolor import print
+from moecolor import FormatText as ft
 from concurrent.futures import ThreadPoolExecutor
 
-def parallel_call(func):
-    def eta_estimator(completed_percent, current_time):
-        rem =  (100.0 * current_time)/ completed_percent -  current_time
-        return rem
+def func_status(func):
+    def _wrapper(*args, **kwargs):
+        print('********************* MultiThreading Start *********************', color='#FFFF99')
+        result = func(*args, **kwargs)
+        print('********************* MultiThreading End *********************', color='#FFFF99')
+        return result
+    return _wrapper
 
+def progress(count, total, st, return_str=False):
+        elapsed_time = time.perf_counter() - st
+        completed = count / total
+        completed_percent = completed * 100
+        eta = (100.0 * elapsed_time)/ completed_percent -  elapsed_time
+        msg = f"\r[ STATUS ] Progress: {completed:0.2%} | Processed: {count}/{total} | " \
+              f"Elapsed-time: {elapsed_time:0.2f}s | ETA: {eta:0.3f}s"
+        if return_str:
+            return msg
+        else:
+            sys.stdout.write(ft(msg, color='lime').text)
+            sys.stdout.flush()
+            if count >= total:
+                print("") # Needed after completing job...
+
+def parallel_call(func):
     def processor(*args, **kwargs):
         global count, st
         total = kwargs.get('total')
@@ -38,40 +59,37 @@ def parallel_call(func):
         func(*args, **kwargs)
         # After call
         count += 1
-        et = time.perf_counter()
-        lapsed_time = et-st
-        completed = count/total
-        eta = eta_estimator(completed * 100, lapsed_time)
-        msg = f"\r[ STATUS ] Progress: {completed:0.2%} | Processed: {count}/{total} | Elapsed-time: {lapsed_time:0.2f}s | ETA: {eta:0.3f}s"
-        sys.stdout.write(msg)
-        sys.stdout.flush()
+        progress(count, total, st)
 
+    @func_status
     def wrapper(*args, **kwargs):
         # Parallelize task...
-        global count, st
-        count = 0
-        _data = kwargs.get('data')
-        total = len(list(_data.values())[0])
-        print('********************* MultiThreading Start *********************')
-        if not total:
-            print("[  WARN  ] Recieved empty list. Early termination...")
-            print('********************* MultiThreading End *********************')
+        try:
+            global count, st
+            count = 0
+            _data = kwargs.get('data')
+            if not _data:
+                print("[  WARN  ] Recieved empty list or invalid argument. Make sure to "\
+                      "provide data as a kwarg [data=your_data_dict]. Early termination...", color='orange')
+                return
+            total = len(list(_data.values())[0])
+            _threads = kwargs.get('threads', -1) or kwargs.get('thread', -1)
+            thread_limit = kwargs.get('thread_limit', 0)
+            thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
+            thread = thread_count if _threads < 1 else _threads
+            threads = min(4096, thread) if thread_limit == 0 else thread
+            print(f"[  INFO  ] Launching: {threads} threads...", color='blue')
+            # Check if all values have the same length, and raise exception if not...
+            for key in _data:
+                if total != len(_data[key]):
+                    raise Exception("Dictionary values are inconsistent. All values must have the same length...")
+                st = time.perf_counter()
+            with ThreadPoolExecutor(threads) as exe:
+                # Iterate over data...
+                for i in range(total):
+                    data = {key: list(_data[key])[i] for key in _data}
+                    exe.submit(processor, *args, data=data, total=total)
+        except Exception as e:
+            print(f"[ ERROR ] {e}.", color='red')
             return
-        _threads = kwargs.get('threads', -1) or kwargs.get('thread', -1)
-        thread_limit = kwargs.get('thread_limit', 0)
-        thread_count = (int(math.sqrt(total)) + 1) * int(math.log(total, 10)) if math.log(total, 10) >= 1 else 1
-        thread = thread_count if _threads < 1 else _threads
-        threads = min(4096, thread) if thread_limit == 0 else thread
-        print(f"[  INFO  ] Launching: {threads} threads...")
-        # Check if all values have the same length, and raise exception if not...
-        for key in _data:
-            if total != len(_data[key]):
-                raise "Dictionary values are inconsistent. All values must have the same length..."
-        st = time.perf_counter()
-        with ThreadPoolExecutor(threads) as exe:
-            # Iterate over data...
-            for i in range(total):
-                data = {key: list(_data[key])[i] for key in _data}
-                exe.submit(processor, *args, data=data, total=total)
-        print('\n********************* MultiThreading End *********************')
     return wrapper

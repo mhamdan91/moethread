@@ -2,3 +2,5 @@ dist/
 build/
 moethread.egg-info/
 other/
+unittest/dst
+__pycache__
