@@ -41,8 +41,16 @@ def progress(count, total, st, return_str=False):
         completed = count / total
         completed_percent = completed * 100
         eta = (100.0 * elapsed_time)/ completed_percent -  elapsed_time
+        tmp = elapsed_time/count
+        if tmp < 0.001:
+            latency = f"{1e6*tmp:0.2f} us/item"
+        elif tmp < 1:
+            latency = f"{1e3*tmp:0.2f} ms/item"
+        else:
+            latency = f"{tmp:0.2f} s/item"
         msg = f"\r[ STATUS ] Progress: {completed:0.2%} | Processed: {count}/{total} | " \
-              f"Elapsed-time: {elapsed_time:0.2f}s | ETA: {eta:0.3f}s"
+              f"Elapsed-time: {elapsed_time:0.2f}s | ETA: {eta:0.3f}s ~ " \
+              f"{count/elapsed_time:0.1f} items/s @ {latency}"
         if return_str:
             return msg
         else:
