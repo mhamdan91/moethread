@@ -1,11 +1,9 @@
-import os, shutil, sys, time
+import os, shutil, sys, time, random
 sys.path.append('.')
 from moecolor import print
 from moethread import parallel_call, progress
 from glob import glob
 from pathlib import Path
-import random
-from time import sleep
 
 top_dir = 'unittest'
 src, dst = 'src', 'dst'
@@ -20,7 +18,7 @@ for i in range(10):
 @parallel_call
 def copy_data(**kwargs):
     if delay:
-        sleep(random.randint(delay//10, delay*2)/delay)
+        time.sleep(random.randint(delay//10, delay*2)/delay)
     src_path = kwargs.get('data', {}).get('path', '')
     dst_path = src_path.replace(src, dst)
     shutil.copyfile(src_path, dst_path)
