@@ -22,11 +22,15 @@
 # SOFTWARE.
 
 import time
-import sys
-import math
+import sys, os
+import math, shutil
+from pathlib import Path
+from glob import glob
 from moecolor import print
 from moecolor import FormatText as ft
 from concurrent.futures import ThreadPoolExecutor
+
+GLOBAL_COUNT = 0
 
 def func_status(func):
     def _wrapper(*args, **kwargs):
@@ -36,21 +40,41 @@ def func_status(func):
         return result
     return _wrapper
 
+def format_time(seconds):
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        _time = f"{int(hours):02d}:{int(minutes):02d}:{seconds:0.2f}"
+    elif minutes:
+        _time = f"{int(minutes):02d}:{seconds:0.2f}"
+    else:
+        _time = f"{seconds:0.3f}s"
+    return _time
+
+def format_latency(tmp):
+    if tmp < 0.001:
+        latency = f"{1e6*tmp:0.2f} us/item"
+    elif tmp < 1:
+        latency = f"{1e3*tmp:0.2f} ms/item"
+    else:
+        latency = f"{tmp:0.2f} s/item"
+    return latency
+
 def progress(count, total, st, return_str=False):
+        # Skip late threads count...
+        global GLOBAL_COUNT
+        if count < GLOBAL_COUNT:
+            return
+        GLOBAL_COUNT = count
         elapsed_time = time.perf_counter() - st
         completed = count / total
         completed_percent = completed * 100
         eta = (100.0 * elapsed_time)/ completed_percent -  elapsed_time
-        tmp = elapsed_time/count
-        if tmp < 0.001:
-            latency = f"{1e6*tmp:0.2f} us/item"
-        elif tmp < 1:
-            latency = f"{1e3*tmp:0.2f} ms/item"
-        else:
-            latency = f"{tmp:0.2f} s/item"
+        latency = format_latency(elapsed_time/count)
+        eta_str = f'ETA: {format_time(eta)}'
+        elt_str = f'Elapsed-time: {format_time(elapsed_time)}'
         msg = f"\r[ STATUS ] Progress: {completed:0.2%} | Processed: {count}/{total} | " \
-              f"Elapsed-time: {elapsed_time:0.2f}s | ETA: {eta:0.3f}s ~ " \
-              f"{count/elapsed_time:0.1f} items/s @ {latency}"
+              f"{elt_str} | {eta_str} ~ {count/elapsed_time:0.1f} items/s @ {latency}"
         if return_str:
             return msg
         else:
@@ -101,3 +125,68 @@ def parallel_call(func):
             print(f"[ ERROR ] {e}.", color='red')
             return
     return wrapper
+
+def mtdo(src_dir: str, dst_dir: str='', action: str='cp',
+         file_type: str='*.*', sep_folder: str='', overwrite: bool=False,
+         prefix: str='', threads: int=64) -> None:
+    """Performs a multithreaded data operation.
+
+    Args:
+        src_dir (str): source directory containing data to copy
+        dst_dir (str): destination directory to copy data to
+        prefix (str): prefix for image renaming, e.g prefix=data and image_name=im.jpg --> data_im.jpg
+        transfer_type (str): transfer type [cp: copy, mv: move, del: delete, ren: rename]
+        file_type (str, optional): type of data to copy, e.g '*.json' - copies json files only. Defaults to all data types '*.*'.
+        sep_folder (str, optional): separation folder where right side directory structure is appended to destination directory,
+                                    e.g. app/data/src/files, sep_folder='data', dest path -> os.path.join(dest_dir, 'src/files'). Defaults to ''.
+        overwrite (bool, optional): whether to overwrite data in destination or skip already copied data on later trials. Defaults to False.
+    """
+
+    action = action.lower()
+    rename_action = ['ren', 'rename']
+    move_action = ['mv', 'move']
+    delete_action = ['del', 'delete', 'remove']
+    copy_action =  ['cp', 'copy']
+    valid_actions = rename_action + move_action + delete_action + copy_action
+    if not os.path.isdir(src_dir):
+        print(f"[ INVALID ] source directory does not exist.", color='purple')
+        return
+    if action in (move_action + copy_action + rename_action) and not os.path.isdir(dst_dir):
+        print(f"[ INVALID ] destination directory does not exist.", color='purple')
+        return
+    if action not in valid_actions:
+        print(f"[ INVALID ] received invalid action [{action}], choose from [mv (to move), ren (to rename), del (to delete), cp (to copy)].", color='purple')
+        return
+    if not prefix and action in rename_action:
+        print(f"[ INVALID ] rename action [{action}] requires `prefix` to be provided.", color='purple')
+        return
+    data_paths = glob(os.path.join(src_dir, '**', file_type), recursive=True)
+    if not data_paths:
+        print(f"[ WARNING ] did not find any valid files of type [{file_type}] in source directory.", color='orange')
+        return
+    if sep_folder and sep_folder not in data_paths[0]:
+        print(f"[ WARNING ] separation folder [{sep_folder}] does not exist in destination directory structure [{data_paths[0].split(os.sep)[:-1]}].", color='orange')
+        return
+    if not overwrite:
+        dst_data_paths = glob(os.path.join(dst_dir, '**', file_type), recursive=True)
+        dst_data = [_.split(os.sep)[-1] for _ in dst_data_paths]
+        data_paths = [_ for _ in data_paths if _.split(os.sep)[-1] not in dst_data]
+
+    @parallel_call
+    def _copy_images(**kwargs):
+        data_path: str = kwargs.get('data', {}).get('data_path', '')
+        if sep_folder:
+            tmp = data_path.split(sep_folder)[-1].split(os.sep)
+            dst_folders, filename = tmp[1:-1], tmp[-1]
+            _dst_dir = Path(os.path.join(dst_dir, *dst_folders))
+        else:
+            filename = data_path.split(os.sep)[-1]
+            _dst_dir = Path(dst_dir)
+        _dst_dir.mkdir(parents=True, exist_ok=True)
+        if action in ['mv', 'move', 'ren', 'rename']:
+            shutil.move(data_path, os.path.join(_dst_dir, filename))
+        elif action in ['del', 'delete', 'remove']:
+            os.remove(data_path)
+        else:
+            shutil.copyfile(data_path, os.path.join(dst_dir, filename))
+    _copy_images(data={'data_path': data_paths}, threads=threads)
