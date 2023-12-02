@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 import time
-import sys, os
+import sys, os, json
 import math, shutil
 from pathlib import Path
 from glob import glob
@@ -128,7 +128,7 @@ def parallel_call(func):
         GLOBAL_COUNT = 0
     return wrapper
 
-def mtdo(src_dir: str, dst_dir: str='', action: str='cp', create_dst_dir: str=False,
+def mtdo(src_dir: str, dst_dir: str='', op: str='cp', create_dst_dir: str=False,
          file_type: str='*.*', sep_folder: str='', overwrite: bool=False,
          prefix: str='', threads: int=64) -> None:
     """Performs a multithreaded data operation.
@@ -136,7 +136,7 @@ def mtdo(src_dir: str, dst_dir: str='', action: str='cp', create_dst_dir: str=Fa
     Args:
         src_dir (str): source directory containing data to copy.
         dst_dir (str): destination directory to copy data to.
-        action (str): transfer type [cp: copy, mv: move, del: delete, ren: rename].
+        op (str): operation type [cp: copy, mv: move, del: delete, ren: rename].
         create_dst_dir (str): force the creation of destination directory if it does not exist.
         file_type (str, optional): type of data to copy, e.g '*.json' - copies json files only. Defaults to all data types '*.*'.
         sep_folder (str, optional): separation folder where right side directory structure is appended to destination directory,
@@ -145,30 +145,31 @@ def mtdo(src_dir: str, dst_dir: str='', action: str='cp', create_dst_dir: str=Fa
         prefix (str): prefix for image renaming, e.g prefix=data and image_name=im.jpg --> data_im.jpg
     """
     invalid_color = 'red'
-    action = action.lower()
-    rename_action = ['ren', 'rename']
-    move_action = ['mv', 'move']
-    delete_action = ['del', 'delete', 'remove']
-    copy_action =  ['cp', 'copy']
+    op = op.lower()
+    rename_op = ['ren', 'rename']
+    move_op = ['mv', 'move']
+    delete_op = ['del', 'delete', 'remove']
+    copy_op =  ['cp', 'copy']
     if create_dst_dir:
         _dd = Path(dst_dir)
         _dd.mkdir(exist_ok=True, parents=True)
-    valid_actions = rename_action + move_action + delete_action + copy_action
+    valid_ops = rename_op + move_op + delete_op + copy_op
     if not os.path.isdir(src_dir):
         print(f"[ INVALID ] source directory does not exist. Set `create_dst_dir` if you wish to force create destination directory", color=invalid_color)
         return
-    if action in (move_action + copy_action + rename_action) and not os.path.isdir(dst_dir):
+    if op in (move_op + copy_op + rename_op) and not os.path.isdir(dst_dir):
         if not dst_dir:
-            print(f"[ INVALID ] action [{action}] requires a valid destination directory.", color=invalid_color)
+            print(f"[ INVALID ] op [{op}] requires a valid destination directory.", color=invalid_color)
         else:
             print(f"[ INVALID ] destination directory does not exist.", color=invalid_color)
         return
-    if action not in valid_actions:
-        print(f"[ INVALID ] received invalid action [{action}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=invalid_color)
+    if op not in valid_ops:
+        print(f"[ INVALID ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=invalid_color)
         return
-    if not prefix and action in rename_action:
-        print(f"[ INVALID ] rename action [{action}] requires `prefix` to be provided.", color=invalid_color)
+    if not prefix and op in rename_op:
+        print(f"[ INVALID ] rename op [{op}] requires `prefix` to be provided.", color=invalid_color)
         return
+    
     data_paths = glob(os.path.join(src_dir, '**', file_type), recursive=True)
     if not data_paths:
         print(f"[ WARNING ] did not find any valid files of type [{file_type}] in source directory.", color='orange')
@@ -185,6 +186,7 @@ def mtdo(src_dir: str, dst_dir: str='', action: str='cp', create_dst_dir: str=Fa
         if not data_paths:
             print(f"[ INFO ] data in source directory already exist in destination directory, nothing to do here.", color='yellow')
             return
+    
     @parallel_call
     def _copy_images(**kwargs):
         data_path: str = kwargs.get('data', {}).get('data_path', '')
@@ -198,10 +200,55 @@ def mtdo(src_dir: str, dst_dir: str='', action: str='cp', create_dst_dir: str=Fa
         _dst_dir.mkdir(parents=True, exist_ok=True)
         if prefix:
             filename = f'{prefix}_{filename}'
-        if action in (move_action + rename_action):
+        if op in (move_op + rename_op):
             shutil.move(data_path, os.path.join(_dst_dir, filename))
-        elif action in delete_action:
+        elif op in delete_op:
             os.remove(data_path)
         else:
             shutil.copyfile(data_path, os.path.join(_dst_dir, filename))
-    _copy_images(data={'data_path': data_paths}, threads=1)
+    _copy_images(data={'data_path': data_paths}, threads=threads)
+
+
+def mtdo_from_json(file_path: str, data_key: str, label_key: str='', op:str='cp'):
+    """Performs a multithreaded data operation for paths in json file.
+
+    Args:
+        file_path (str): input json file containing paths
+        data_key (str): dictionary key holding file paths
+        label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
+        op (str): operation type [cp: copy, mv: move].
+    """
+    _mtdo_from_file(file_path, data_key, label_key, op, file_type='json')
+    
+
+
+
+def mtdo_from_csv(file_path: str, data_key: str, label_key: str='', op:str='cp'):
+    """Performs a multithreaded data operation for paths in csv file.
+
+    Args:
+        file_path (str): input json file containing paths
+        data_key (str): dictionary key holding file paths
+        label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
+        op (str): operation type [cp: copy, mv: move].
+    """
+    _mtdo_from_file(file_path, data_key, label_key, op, file_type='csv')
+
+def _mtdo_from_file(file_path: str, data_key: str, label_key: str='', op:str='cp', file_type: str=''):
+    invalid_color = 'red'
+    filename = file_path.split(os.sep)[-1]
+    if os.path.splitext(filename)[-1].lower() != file_type:
+        print(f"[ INVALID ] expected `*.{file_type}` file, but invalid file type provided [{filename}].", color=invalid_color)
+        return
+    if os.path.exists(file_path):
+        print(f"[ INVALID ] provided file [{filename}] does not exist.", color=invalid_color)
+        return
+    if file_type == 'json':
+        with open(file_path) as f:
+            data = json.load(f)
+    else:
+        pass
+    valid_ops = ['cp', 'copy', 'mv', 'move']
+    if op not in valid_ops:
+        print(f"[ INVALID ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=invalid_color)
+        return
