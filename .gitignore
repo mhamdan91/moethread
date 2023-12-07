@@ -4,3 +4,12 @@ moethread.egg-info/
 other/
 unittest/dst
 __pycache__
+
+unittest/*
+!unittest
+!unittest/unittest.py
+!unittest/src
+
+*.csv
+*.json
+*.zip

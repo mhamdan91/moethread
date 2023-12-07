@@ -1,7 +1,7 @@
 import os, shutil, sys, time, random
 sys.path.append('.')
 from moecolor import print
-from moethread import parallel_call, progress, mtdo
+from moethread import parallel_call, progress, mtdo, mtdo_from_json, mtdo_from_csv
 from glob import glob
 from pathlib import Path
 
@@ -17,7 +17,7 @@ data = glob(os.path.join(top_dir, src, '*.*'))
 #     data += data
 
 
-mtdo(src, dst, op='cp', file_type='*.jpg', overwrite=True, threads=4)
+# mtdo(src, dst, op='rm', file_type='*.jpg', overwrite=True, threads=4)
 
 # @parallel_call
 # def copy_data(**kwargs):
@@ -30,13 +30,13 @@ mtdo(src, dst, op='cp', file_type='*.jpg', overwrite=True, threads=4)
 # data_dict = {'path': data}
 # copy_data(data=data_dict, threads=16)
 
-print("*********************   Sequential Copy  *********************", color="blue")
-st = time.perf_counter()
-total = len(data)
-for i, file_path in enumerate(data):
-    filename = os.path.splitext(file_path.split(os.sep)[-1])[0]
-    shutil.copy(file_path, file_path.replace(src, dst))
-    print(progress(i+1, total, st, True), color='lime', end='\r')
+# print("*********************   Sequential Copy  *********************", color="blue")
+# st = time.perf_counter()
+# total = len(data)
+# for i, file_path in enumerate(data):
+#     filename = os.path.splitext(file_path.split(os.sep)[-1])[0]
+#     shutil.copy(file_path, file_path.replace(src, dst))
+#     print(progress(i+1, total, st, True), color='lime', end='\r')
 
 
 # print("*********************   dup Sequential Copy  *********************", color="blue")
