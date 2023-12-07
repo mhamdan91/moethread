@@ -7,20 +7,17 @@ from pathlib import Path
 
 top_dir = 'unittest'
 curdir = os.path.dirname(os.path.abspath(__file__))
-src, dst = os.path.join(curdir, 'src'), os.path.join(curdir, 'dst')
+src, dst = os.path.join(curdir, 'src1'), os.path.join(curdir, 'dst')
 delay = 0
 dst_dir = Path(os.path.join(top_dir, dst))
 dst_dir.mkdir(exist_ok=True, parents=True)
 data = glob(os.path.join(top_dir, src, '*.*'))
 # Replicate data...
-for i in range(10):
-    data += data
+# for i in range(15):
+#     data += data
 
 
-
-
-mtdo(src, dst, action='cp', prefix='tester', sep_folder='unittest', file_type='*.jpg', overwrite=True)
-
+mtdo(src, dst, op='cp', file_type='*.jpg', overwrite=True, threads=4)
 
 # @parallel_call
 # def copy_data(**kwargs):
@@ -33,9 +30,19 @@ mtdo(src, dst, action='cp', prefix='tester', sep_folder='unittest', file_type='*
 # data_dict = {'path': data}
 # copy_data(data=data_dict, threads=16)
 
-# print("*********************   Sequential Copy  *********************", color="blue")
+print("*********************   Sequential Copy  *********************", color="blue")
+st = time.perf_counter()
+total = len(data)
+for i, file_path in enumerate(data):
+    filename = os.path.splitext(file_path.split(os.sep)[-1])[0]
+    shutil.copy(file_path, file_path.replace(src, dst))
+    print(progress(i+1, total, st, True), color='lime', end='\r')
+
+
+# print("*********************   dup Sequential Copy  *********************", color="blue")
 # st = time.perf_counter()
 # total = len(data)
 # for i, file_path in enumerate(data):
-#     shutil.copy(file_path, file_path.replace(src, dst))
+#     filename = os.path.splitext(file_path.split(os.sep)[-1])[0]
+#     shutil.copy(file_path, file_path.replace(src, dst).replace(filename, f'{filename}_{i}'))
 #     print(progress(i+1, total, st, True), color='lime', end='\r')
