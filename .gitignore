@@ -2,14 +2,9 @@ dist/
 build/
 moethread.egg-info/
 other/
-unittest/dst
-__pycache__
-
+# Ignore everything under 'unittest'
 unittest/*
-!unittest
+# Except for the 'src' directory and its contents
+!unittest/src/
 !unittest/unittest.py
-!unittest/src
-
-*.csv
-*.json
-*.zip
+__pycache__

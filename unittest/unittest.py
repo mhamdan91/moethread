@@ -12,9 +12,18 @@ delay = 0
 dst_dir = Path(os.path.join(top_dir, dst))
 dst_dir.mkdir(exist_ok=True, parents=True)
 data = glob(os.path.join(top_dir, src, '*.*'))
-# Replicate data...
-# for i in range(15):
-#     data += data
+
+replicate = False
+
+if replicate:
+    # Replicate data...
+    for i in range(15):
+        data += data
+
+
+# mtdo_from_csv(os.path.join(curdir, "files", "data.csv"), os.path.join(curdir, "files", "csv_out"), 'IMG_URL', 'class_name')
+
+mtdo_from_json(os.path.join(curdir, "files", "data.json"), os.path.join(curdir, "files", "json_out"), 'IMG_URL', 'class_name')
 
 
 # mtdo(src, dst, op='rm', file_type='*.jpg', overwrite=True, threads=4)

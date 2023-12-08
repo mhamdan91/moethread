@@ -57,6 +57,20 @@ def _chunk_data(data: Dict, size: int, chunked_data: List=[]):
     del chunked_dict
     return chunked_data
 
+def _csv_to_dict(csv_file):
+    data: Dict[str, List] = {}
+    with open(csv_file, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            for key, value in row.items():
+                keys = key.split('\t')
+                values = value.split('\t')
+                for k, v in zip(keys, values):
+                    if k not in data:
+                        data[k] = []
+                    data[k].append(v)
+    return data
+
 def func_status(func):
     def _wrapper(*args, **kwargs):
         global STDOUT, GLOBAL_COUNT
@@ -161,12 +175,12 @@ def parallel_call(func):
                         data = {key: list(chunk[key])[i] for key in chunk}
                         exe.submit(processor, *args, data=data, total=total)
         except Exception as e:
-            print(f"[ ERROR ] {e}.", color='red')
+            print(f"[  ERROR  ] {e}.", color='red')
             return
     return wrapper
 
 def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
-         sep_folder: str='', overwrite: bool=False, prefix: str='', **kwargs) -> None:
+         sep_folder: str='', overwrite: bool=False, prefix: str='', threads:int=8, **kwargs) -> None:
     """Performs a multithreaded data operation.
 
     Args:
@@ -179,8 +193,7 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
         overwrite (bool, optional): whether to overwrite data in destination or skip already copied data on later trials. Defaults to False.
         prefix (str): prefix for image renaming, e.g prefix=data and image_name=im.jpg --> data_im.jpg
     """
-    verbose = kwargs.get('verbose')
-    invalid_color = 'red'
+    error_color = 'red'
     op = op.lower()
     rename_op = ['ren', 'rename']
     move_op = ['mv', 'move']
@@ -189,37 +202,35 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
     _dd = Path(dst_dir)
     _dd.mkdir(exist_ok=True, parents=True)
     valid_ops = rename_op + move_op + delete_op + copy_op
-    if not os.path.isdir(src_dir):
-        print(f"[ INVALID ] source directory does not exist. Set `create_dst_dir` if you wish to force create destination directory", color=invalid_color)
-        return
     if op in (move_op + copy_op + rename_op) and not os.path.isdir(dst_dir):
         if not dst_dir:
-            print(f"[ INVALID ] op [{op}] requires a valid destination directory.", color=invalid_color)
+            print(f"[  ERROR  ] op [{op}] requires a valid destination directory.", color=error_color)
         else:
-            print(f"[ INVALID ] destination directory does not exist.", color=invalid_color)
+            print(f"[  ERROR  ] destination directory does not exist.", color=error_color)
         return
     if op not in valid_ops:
-        print(f"[ INVALID ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=invalid_color)
+        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=error_color)
         return
     if not prefix and op in rename_op:
-        print(f"[ INVALID ] rename op [{op}] requires `prefix` to be provided.", color=invalid_color)
+        print(f"[  ERROR  ] rename op [{op}] requires `prefix` to be provided.", color=error_color)
         return
 
     data_paths = glob(os.path.join(src_dir, '**', file_type), recursive=True)
     if not data_paths:
-        print(f"[ WARNING ] did not find any valid files of type [{file_type}] in source directory.", color='orange')
+        print(f"[  WARN  ] did not find any valid files of type [{file_type}] in source directory.", color='orange')
         return
     if sep_folder and sep_folder not in data_paths[0].split(os.sep):
-        print(f"[ WARNING ] separation folder [{sep_folder}] does not exist in destination directory " \
+        print(f"[  WARN  ] separation folder [{sep_folder}] does not exist in destination directory " \
               f"structure [{f'{os.sep}'.join(data_paths[0].split(os.sep)[:-1])}].", color='orange')
-        print(f"[ WARNING ] will place data directly under [{dst_dir}]", color='orange')
+        print(f"[  WARN  ] will place data directly under [{dst_dir}]", color='orange')
         sep_folder = ''
     if not overwrite:
         dst_data_paths = glob(os.path.join(dst_dir, '**', file_type), recursive=True)
         dst_data = [_.split(os.sep)[-1] for _ in dst_data_paths]
         data_paths = [_ for _ in data_paths if _.split(os.sep)[-1] not in dst_data]
         if not data_paths:
-            print(f"[ INFO ] data in source directory already exist in destination directory, nothing to do here.", color='yellow')
+            print(f"[  INFO  ] data in source directory already exist in " \
+                  f"destination directory, nothing to do here.", color='blue')
             return
 
     @parallel_call
@@ -241,10 +252,10 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
             os.remove(data_path)
         else:
             shutil.copyfile(data_path, os.path.join(_dst_dir, filename))
-    _process_data(data={'data_path': data_paths}, **kwargs)
+    _process_data(data={'data_path': data_paths}, threads=threads, **kwargs)
 
 def mtdo_from_json(file_path: str, dst_dir: str, data_key: str,
-                   label_key: str='', op:str='cp', **kwargs):
+                   label_key: str='', op:str='cp', threads:int=8, **kwargs):
     """Performs a multithreaded data operation for paths in json file.
 
     Args:
@@ -253,10 +264,10 @@ def mtdo_from_json(file_path: str, dst_dir: str, data_key: str,
         label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
         op (str): operation type [cp: copy, mv: move].
     """
-    _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='json', **kwargs)
+    _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='json', threads=threads, **kwargs)
 
 def mtdo_from_csv(file_path: str, dst_dir: str, data_key: str,
-                  label_key: str='', op:str='cp', **kwargs):
+                  label_key: str='', op:str='cp', threads:int=8, **kwargs):
     """Performs a multithreaded data operation for paths in csv file.
 
     Args:
@@ -265,24 +276,10 @@ def mtdo_from_csv(file_path: str, dst_dir: str, data_key: str,
         label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
         op (str): operation type [cp: copy, mv: move].
     """
-    _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='csv', **kwargs)
-
-def _csv_to_dict(csv_file):
-    data: Dict[str, List] = {}
-    with open(csv_file, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            for key, value in row.items():
-                keys = key.split('\t')
-                values = value.split('\t')
-                for k, v in zip(keys, values):
-                    if k not in data:
-                        data[k] = []
-                    data[k].append(v)
-    return data
+    _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='csv', threads=threads, **kwargs)
 
 def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str='',
-                    op:str='cp', file_type: str='json', **kwargs):
+                    op:str='cp', file_type: str='json', threads:int=8, **kwargs):
     """Performs a multithreaded data operation on data in file
 
     Args:
@@ -294,27 +291,31 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
         file_type (str, optional): Type of file to process [json or csv]. Defaults to 'json'.
         threads (int, optional): number of threads to launch. Defaults to 8.
     """
-    invalid_color = 'red'
+    error_color = 'red'
     _dst_dir = Path(dst_dir)
     _dst_dir.mkdir(parents=True, exist_ok=True)
     filename = file_path.split(os.sep)[-1]
-    if os.path.splitext(filename)[-1].lower() != file_type:
-        print(f"[ INVALID ] expected `*.{file_type}` file, but invalid " \
-              f"file type provided [{filename}].", color=invalid_color)
+    if os.path.splitext(filename)[-1].lower().replace('.', '') != file_type:
+        print(f"[  ERROR  ] expected `*.{file_type}` file, but invalid " \
+              f"file type provided [{filename}].", color=error_color)
         return
-    if os.path.exists(file_path):
-        print(f"[ INVALID ] provided file [{filename}] does not exist.", color=invalid_color)
+    if not os.path.exists(file_path):
+        print(f"[  ERROR  ] provided file [{filename}] does not exist.", color=error_color)
         return
+    st = time.perf_counter()
+    print("[  INFO  ] Reading data from file, please wait...", color='blue')
     if file_type == 'json':
         with open(file_path) as f:
             data = json.load(f)
     else:
         data = _csv_to_dict(file_path)
+    et = time.perf_counter()
+    print(f"[  INFO  ] Finished reading data in {et-st:0.2f} seconds...", color='blue')
 
     valid_ops = ['cp', 'copy', 'mv', 'move']
     if op not in valid_ops:
-        print(f"[ INVALID ] received invalid op [{op}], choose from [mv (to move), " \
-              f"cp (to copy), ren (to rename), del (to delete)].", color=invalid_color)
+        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), " \
+              f"cp (to copy), ren (to rename), del (to delete)].", color=error_color)
         return
 
     @parallel_call
@@ -329,14 +330,22 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
             dst_folder = Path(os.path.join(_dst_dir, subfolder))
             dst_folder.mkdir(parents=True, exist_ok=True)
         if op in ['mv', 'move']:
-            shutil.move(_path, os.path.join(_dst_dir, filename))
+            shutil.move(_path, os.path.join(dst_folder, filename))
         else:
-            shutil.copyfile(_path, os.path.join(_dst_dir, filename))
+            shutil.copyfile(_path, os.path.join(dst_folder, filename))
+
+    keys = list(data.keys())
+    if data_key not in keys:
+        print(f"[  ERROR  ] Data_Key [{data_key}] does not exist in keys [{keys}]", color=error_color)
+        return
+    if label_key and label_key not in keys:
+        print(f"[  ERROR  ] Label_Key [{label_key}] does not exist in keys [{keys}]", color=error_color)
+        return
 
     data_paths = data[data_key]
     if label_key:
         labels = data[label_key]
-        _process_data(data={'path': data_paths, 'label': labels}, **kwargs)
+        _process_data(data={'path': data_paths, 'label': labels}, threads=threads, **kwargs)
     else:
-        _process_data(data={'path': data_paths}, **kwargs)
+        _process_data(data={'path': data_paths}, threads=threads, **kwargs)
 
