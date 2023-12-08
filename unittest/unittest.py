@@ -23,10 +23,10 @@ if replicate:
 
 # mtdo_from_csv(os.path.join(curdir, "files", "data.csv"), os.path.join(curdir, "files", "csv_out"), 'IMG_URL', 'class_name')
 
-mtdo_from_json(os.path.join(curdir, "files", "data.json"), os.path.join(curdir, "files", "json_out"), 'IMG_URL', 'class_name')
+# mtdo_from_json(os.path.join(curdir, "files", "data.json"), os.path.join(curdir, "files", "json_out"), 'IMG_URL', 'class_name', chunk_size=250)
 
 
-# mtdo(src, dst, op='rm', file_type='*.jpg', overwrite=True, threads=4)
+mtdo(src, dst, op='rm', file_type='*.jpg', overwrite=True, threads=4)
 
 # @parallel_call
 # def copy_data(**kwargs):

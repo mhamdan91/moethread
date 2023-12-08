@@ -36,6 +36,7 @@ from concurrent.futures import ThreadPoolExecutor
 GLOBAL_COUNT = 0
 STDOUT = None
 
+################## HELPER FUNCTIONS START... ##################
 def _chunk_dict(in_dict: Dict, size: int=5000):
     it = iter(in_dict.items())
     chunks = [{k:v for k, v in islice(it, size)} for _ in range((len(in_dict) + size - 1) // size)]
@@ -70,6 +71,9 @@ def _csv_to_dict(csv_file):
                         data[k] = []
                     data[k].append(v)
     return data
+
+################## HELPER FUNCTIONS END.... ##################
+
 
 def func_status(func):
     def _wrapper(*args, **kwargs):
@@ -179,6 +183,9 @@ def parallel_call(func):
             return
     return wrapper
 
+
+
+################## READY TO GO FUNCTIONS START... ##################
 def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
          sep_folder: str='', overwrite: bool=False, prefix: str='', threads:int=8, **kwargs) -> None:
     """Performs a multithreaded data operation.
@@ -186,18 +193,19 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
     Args:
         src_dir (str): source directory containing data to copy.
         dst_dir (str): destination directory to copy data to.
-        op (str): operation type [cp: copy, mv: move, del: delete, ren: rename].
+        op (str): operation type [cp: copy, mv: move, rm: delete, ren: rename].
         file_type (str, optional): type of data to copy, e.g '*.json' - copies json files only. Defaults to all data types '*.*'.
         sep_folder (str, optional): separation folder where right side directory structure is appended to destination directory,
                                     e.g. app/data/src/files, sep_folder='data', dest path -> os.path.join(dest_dir, 'src/files'). Defaults to ''.
         overwrite (bool, optional): whether to overwrite data in destination or skip already copied data on later trials. Defaults to False.
         prefix (str): prefix for image renaming, e.g prefix=data and image_name=im.jpg --> data_im.jpg
+        threads (int, optional): number of threads to launch. Defaults to 8.
     """
     error_color = 'red'
     op = op.lower()
     rename_op = ['ren', 'rename']
     move_op = ['mv', 'move']
-    delete_op = ['del', 'delete', 'remove']
+    delete_op = ['del', 'delete', 'remove', 'rm']
     copy_op =  ['cp', 'copy']
     _dd = Path(dst_dir)
     _dd.mkdir(exist_ok=True, parents=True)
@@ -209,7 +217,7 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
             print(f"[  ERROR  ] destination directory does not exist.", color=error_color)
         return
     if op not in valid_ops:
-        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), del (to delete)].", color=error_color)
+        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), rm (to delete)].", color=error_color)
         return
     if not prefix and op in rename_op:
         print(f"[  ERROR  ] rename op [{op}] requires `prefix` to be provided.", color=error_color)
@@ -263,6 +271,8 @@ def mtdo_from_json(file_path: str, dst_dir: str, data_key: str,
         data_key (str): dictionary key holding file paths
         label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
         op (str): operation type [cp: copy, mv: move].
+        threads (int, optional): number of threads to launch. Defaults to 8.
+        **kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
     """
     _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='json', threads=threads, **kwargs)
 
@@ -275,6 +285,8 @@ def mtdo_from_csv(file_path: str, dst_dir: str, data_key: str,
         data_key (str): dictionary key holding file paths
         label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
         op (str): operation type [cp: copy, mv: move].
+        threads (int, optional): number of threads to launch. Defaults to 8.
+        **kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
     """
     _mtdo_from_file(file_path, dst_dir, data_key, label_key, op, file_type='csv', threads=threads, **kwargs)
 
@@ -290,6 +302,7 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
         op (str, optional): operation to carry on [copy `cp` or move `mv`]. Defaults to 'cp'.
         file_type (str, optional): Type of file to process [json or csv]. Defaults to 'json'.
         threads (int, optional): number of threads to launch. Defaults to 8.
+        **kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
     """
     error_color = 'red'
     _dst_dir = Path(dst_dir)
@@ -315,7 +328,7 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
     valid_ops = ['cp', 'copy', 'mv', 'move']
     if op not in valid_ops:
         print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), " \
-              f"cp (to copy), ren (to rename), del (to delete)].", color=error_color)
+              f"cp (to copy), ren (to rename), rm (to delete)].", color=error_color)
         return
 
     @parallel_call
@@ -348,4 +361,4 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
         _process_data(data={'path': data_paths, 'label': labels}, threads=threads, **kwargs)
     else:
         _process_data(data={'path': data_paths}, threads=threads, **kwargs)
-
+################## READY TO GO FUNCTIONS END.... ##################
