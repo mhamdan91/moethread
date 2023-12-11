@@ -146,5 +146,59 @@ def process_pulls(*args, **kwargs):
 process_pulls(data={"pulls": pulls}, threads=-1)
 
 ```
+
+## Ready to go functions
+The library is packed with some ready to go functions that can be used to perform several operations using `parallel_call` without having to write code. All you have to do is to call those functions.
+- mtdo()
+- mtdo_from_json()
+- mtdo_from_csv()
+
+```python
+def mtdo(....)
+	"""
+	Performs a multithreaded data operation.
+
+	Args:
+		src_dir (str): source directory containing data to copy.
+		dst_dir (str): destination directory to copy data to.
+		op (str): operation type [cp: copy, mv: move, rm: delete, ren: rename].
+		file_type (str, optional): type of data to copy, e.g '*.json' - copies json files only. Defaults to all data types '*.*'.
+		sep_folder (str, optional): separation folder where right side directory structure is appended to destination directory,
+									e.g. app/data/src/files, sep_folder='data', dest path -> os.path.join(dest_dir, 'src/files'). Defaults to ''.
+		overwrite (bool, optional): whether to overwrite data in destination or skip already copied data on later trials. Defaults to False.
+		prefix (str): prefix for image renaming, e.g prefix=data and image_name=im.jpg --> data_im.jpg
+		threads (int, optional): number of threads to launch. Defaults to 8.
+		**kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
+	"""
+```
+
+```python
+def mtdo_from_json(....)
+	"""Performs a multithreaded data operation for paths in json file.
+
+	Args:
+		file_path (str): input json file containing paths
+		data_key (str): dictionary key holding file paths
+		label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
+		op (str): operation type [cp: copy, mv: move].
+		threads (int, optional): number of threads to launch. Defaults to 8.
+		**kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
+	"""
+```
+
+```python
+def mtdo_from_csv(....)
+	"""Performs a multithreaded data operation for paths in csv file.
+
+	Args:
+		file_path (str): input json file containing paths
+		data_key (str): dictionary key holding file paths
+		label_key (str): (optional) dictionary key holding labels for folders name to copy/move data to (classifying copied/moved data based on labels)
+		op (str): operation type [cp: copy, mv: move].
+		threads (int, optional): number of threads to launch. Defaults to 8.
+		**kwargs: Extra keywords such as (chunk_size: split data into equal sized chunks, verbose: supress moethread stdout), defaults to (chunk_size=5000, verbose=True)
+	"""
+```
+
 ----------------------------------------
 Author: Hamdan, Muhammad (@mhamdan91 - ©)
