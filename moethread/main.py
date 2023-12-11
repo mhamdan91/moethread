@@ -179,7 +179,7 @@ def parallel_call(func):
                         data = {key: list(chunk[key])[i] for key in chunk}
                         exe.submit(processor, *args, data=data, total=total)
         except Exception as e:
-            print(f"[  ERROR  ] {e}.", color='red')
+            print(f"[  ERROR ] {e}.", color='red')
             return
     return wrapper
 
@@ -212,15 +212,15 @@ def mtdo(src_dir: str, dst_dir: str='', op: str='cp', file_type: str='*.*',
     valid_ops = rename_op + move_op + delete_op + copy_op
     if op in (move_op + copy_op + rename_op) and not os.path.isdir(dst_dir):
         if not dst_dir:
-            print(f"[  ERROR  ] op [{op}] requires a valid destination directory.", color=error_color)
+            print(f"[  ERROR ] op [{op}] requires a valid destination directory.", color=error_color)
         else:
-            print(f"[  ERROR  ] destination directory does not exist.", color=error_color)
+            print(f"[  ERROR ] destination directory does not exist.", color=error_color)
         return
     if op not in valid_ops:
-        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), rm (to delete)].", color=error_color)
+        print(f"[  ERROR ] received invalid op [{op}], choose from [mv (to move), cp (to copy), ren (to rename), rm (to delete)].", color=error_color)
         return
     if not prefix and op in rename_op:
-        print(f"[  ERROR  ] rename op [{op}] requires `prefix` to be provided.", color=error_color)
+        print(f"[  ERROR ] rename op [{op}] requires `prefix` to be provided.", color=error_color)
         return
 
     data_paths = glob(os.path.join(src_dir, '**', file_type), recursive=True)
@@ -309,11 +309,11 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
     _dst_dir.mkdir(parents=True, exist_ok=True)
     filename = file_path.split(os.sep)[-1]
     if os.path.splitext(filename)[-1].lower().replace('.', '') != file_type:
-        print(f"[  ERROR  ] expected `*.{file_type}` file, but invalid " \
+        print(f"[  ERROR ] expected `*.{file_type}` file, but invalid " \
               f"file type provided [{filename}].", color=error_color)
         return
     if not os.path.exists(file_path):
-        print(f"[  ERROR  ] provided file [{filename}] does not exist.", color=error_color)
+        print(f"[  ERROR ] provided file [{filename}] does not exist.", color=error_color)
         return
     st = time.perf_counter()
     print("[  INFO  ] Reading data from file, please wait...", color='blue')
@@ -327,7 +327,7 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
 
     valid_ops = ['cp', 'copy', 'mv', 'move']
     if op not in valid_ops:
-        print(f"[  ERROR  ] received invalid op [{op}], choose from [mv (to move), " \
+        print(f"[  ERROR ] received invalid op [{op}], choose from [mv (to move), " \
               f"cp (to copy), ren (to rename), rm (to delete)].", color=error_color)
         return
 
@@ -349,10 +349,10 @@ def _mtdo_from_file(file_path: str, dst_dir: str, data_key: str, label_key: str=
 
     keys = list(data.keys())
     if data_key not in keys:
-        print(f"[  ERROR  ] Data_Key [{data_key}] does not exist in keys [{keys}]", color=error_color)
+        print(f"[  ERROR ] Data_Key `{data_key}` does not exist in keys {keys}", color=error_color)
         return
     if label_key and label_key not in keys:
-        print(f"[  ERROR  ] Label_Key [{label_key}] does not exist in keys [{keys}]", color=error_color)
+        print(f"[  ERROR ] Label_Key `{label_key}` does not exist in keys {keys}", color=error_color)
         return
 
     data_paths = data[data_key]
