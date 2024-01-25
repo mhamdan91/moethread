@@ -15,15 +15,15 @@ data = glob(os.path.join(top_dir, src, '*.*'))
 
 replicate = True
 
-if replicate:
-    # Replicate data...
-    for i in range(15):
-        data += data
+# if replicate:
+#     # Replicate data...
+#     for i in range(15):
+#         data += data
 
 
 # mtdo_from_csv(os.path.join(curdir, "files", "data.csv"), os.path.join(curdir, "files", "csv_out"), 'IMG_URL', 'class_name')
 
-mtdo_from_json(os.path.join(curdir, "files", "data.json"), os.path.join(curdir, "files", "json_out2"), 'IMG_URL', 'class_name', chunks_size=250)
+# mtdo_from_json(os.path.join(curdir, "files", "data.json"), os.path.join(curdir, "files", "json_out2"), 'IMG_URL', 'class_name', chunks_size=250)
 
 # mtdo(src, dst, op='cp', prefix='okay', file_type='*', overwrite=True, threads=4)
 
