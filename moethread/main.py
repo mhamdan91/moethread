@@ -103,13 +103,13 @@ def format_time(seconds):
         _time = f"{seconds:0.3f}s"
     return _time
 
-def format_latency(tmp):
-    if tmp < 0.001:
-        latency = f"{1e6*tmp:0.2f} us/item"
-    elif tmp < 1:
-        latency = f"{1e3*tmp:0.2f} ms/item"
+def format_latency(time_item):
+    if time_item < 0.001:
+        latency = f"{1e6*time_item:0.2f} us/item"
+    elif time_item < 1:
+        latency = f"{1e3*time_item:0.2f} ms/item"
     else:
-        latency = f"{tmp:0.2f} s/item"
+        latency = f"{time_item:0.2f} s/item"
     return latency
 
 def progress(count, total, st, return_str=False):
@@ -117,7 +117,7 @@ def progress(count, total, st, return_str=False):
         global GLOBAL_COUNT
         if count < GLOBAL_COUNT:
             return
-        GLOBAL_COUNT = count
+        GLOBAL_COUNT = 0 if GLOBAL_COUNT >= (total-1) else count
         elapsed_time = time.perf_counter() - st
         completed = count / total
         completed_percent = completed * 100
