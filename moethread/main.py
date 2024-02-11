@@ -117,7 +117,6 @@ def progress(count, total, st, return_str=False):
         global GLOBAL_COUNT
         if count < GLOBAL_COUNT:
             return
-        GLOBAL_COUNT = 0 if GLOBAL_COUNT >= (total-1) else count
         elapsed_time = time.perf_counter() - st
         completed = count / total
         completed_percent = completed * 100
@@ -128,11 +127,14 @@ def progress(count, total, st, return_str=False):
         msg = f"\r[ STATUS ] Progress: {completed:0.2%} | Processed: {count}/{total} | " \
               f"{elt_str} | {eta_str} ~ {count/elapsed_time:0.1f} items/s @ {latency}"
         if return_str:
+            if count >= total:
+                GLOBAL_COUNT = 0
             return msg
         else:
             sys.stdout.write(ft(msg, color='lime').text)
             sys.stdout.flush()
             if count >= total:
+                GLOBAL_COUNT = 0
                 print("") # Needed after completing job...
 
 def parallel_call(func):
